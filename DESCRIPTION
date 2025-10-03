@@ -1,0 +1,27 @@
+Package: topologyR
+Type: Package
+Title: Topological Connectivity Analysis for Numeric Data
+Version: 0.1.1
+Authors@R: 
+    person(given = "José Mauricio", family = "Gómez Julián",
+           email = "isadore.nabi@pm.me", role = c("aut", "cre"))
+Description: Description: Implementation of topological data analysis methods based on 
+    graph-theoretic approaches for discovering topological structures in data.
+    The core algorithm constructs topological spaces from graphs following
+    Nada et al. (2018) <doi:10.1002/mma.5096> "New types of topological 
+    structures via graphs".
+License: MIT + file LICENSE
+URL: https://github.com/IsadoreNabi/topologyR
+BugReports: https://github.com/IsadoreNabi/topologyR/issues
+Encoding: UTF-8
+RoxygenNote: 7.3.3
+Depends: R (>= 4.0.0)
+Imports: ggplot2, stats, utils
+Suggests: testthat (>= 3.0.0), knitr, rmarkdown
+Config/testthat/edition: 3
+NeedsCompilation: no
+Packaged: 2025-09-26 02:18:30 UTC; ROG
+Author: José Mauricio Gómez Julián [aut, cre]
+Maintainer: José Mauricio Gómez Julián <isadore.nabi@pm.me>
+Repository: CRAN
+Date/Publication: 2025-10-03 12:20:02 UTC
