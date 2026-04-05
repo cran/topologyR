@@ -7,18 +7,21 @@
 is_topology_connected2(topology)
 }
 \arguments{
-\item{topology}{A list of sets representing the topology}
+\item{topology}{A list of integer vectors representing the open sets.}
 }
 \value{
-\code{logical} scalar. Returns \code{TRUE} if the topology is
-connected through directed graph traversal (considering sequential
-connections between elements), \code{FALSE} otherwise. Returns
-\code{FALSE} if the topology is empty.
+\code{logical} scalar. \code{TRUE} if all elements are reachable
+from the minimum element via directed edges, \code{FALSE} otherwise.
 }
 \description{
-Check if a topology is connected using directed graph approach
+Converts the topology into a directed graph (sequential edges between
+sorted elements within each set) and checks reachability via DFS.
+
+\strong{Note:} This is a necessary but not sufficient condition for
+topological connectivity. For an exact check, use
+\code{\link{is_topology_connected_exact}}.
 }
 \examples{
-topology <- list(c(1,2,3), c(3,4,5))
+topology <- list(c(1, 2, 3), c(3, 4, 5))
 is_topology_connected2(topology)
 }

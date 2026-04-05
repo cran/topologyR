@@ -2,42 +2,27 @@
 % Please edit documentation in R/topology_functions.R
 \name{visualize_topology_thresholds}
 \alias{visualize_topology_thresholds}
-\title{Visualize and Compare Different Threshold Methods}
+\title{Visualize and compare different threshold methods}
 \usage{
 visualize_topology_thresholds(data, plot = TRUE)
 }
 \arguments{
-\item{data}{Numeric vector to analyze}
+\item{data}{Numeric vector to analyze.}
 
-\item{plot}{Logical indicating whether to display plots (default: TRUE)}
+\item{plot}{Logical indicating whether to return plot objects
+(default: \code{TRUE}).}
 }
 \value{
-A \code{data.frame} with one row per threshold method containing:
-\describe{
-\item{method}{Character. Name of the threshold calculation method.}
-\item{threshold}{Numeric. The calculated threshold value.}
-\item{base_size}{Integer. Number of sets in the resulting topological base.}
-}
-If \code{plot = TRUE}, generates three plots as side effects:
-(1) Bar chart comparing threshold values by method,
-(2) Bar chart comparing base sizes by method,
-(3) Scatter plot showing threshold vs base size relationship.
+A \code{data.frame} with columns \code{method}, \code{threshold},
+and \code{base_size}. If \code{plot = TRUE}, carries an attribute
+\code{"plots"} containing a list of three \code{ggplot} objects.
 }
 \description{
-This function creates a comprehensive visualization of different
-threshold methods used in topology analysis. It generates three distinct plots
-to help understand the relationships between different threshold methods and
-their effects on topological structure.
-}
-\details{
-Visualize Topology Thresholds
+Visualize and compare different threshold methods
 }
 \examples{
 \donttest{
-# Generate sample data
-data <- rnorm(100)
-
-# Visualize threshold comparisons
+data <- rnorm(50)
 results <- visualize_topology_thresholds(data)
 }
 }

@@ -2,38 +2,27 @@
 % Please edit documentation in R/topology_functions.R
 \name{is_topology_connected}
 \alias{is_topology_connected}
-\title{Topology Analysis Functions for Time Series Data}
+\title{Check if a topology is connected using undirected graph approach}
 \usage{
 is_topology_connected(topology)
 }
 \arguments{
-\item{topology}{A list of sets representing the topology}
+\item{topology}{A list of integer vectors representing the open sets.}
 }
 \value{
-\code{logical} scalar. Returns \code{TRUE} if the topology is
-connected (all elements can be reached from any starting point through
-the undirected graph representation), \code{FALSE} otherwise. Returns
-\code{FALSE} if the topology is empty.
+\code{logical} scalar. \code{TRUE} if the derived graph is connected,
+\code{FALSE} otherwise or if the topology is empty.
 }
 \description{
-Functions for analyzing topological properties of time series data
-}
-\details{
-This module provides three main functions for analyzing the connectivity
-of topological structures, particularly focused on economic time series:
-\itemize{
-\item is_topology_connected: Uses an undirected graph approach
-\item is_topology_connected2: Uses a directed graph approach
-\item is_topology_connected_manual: Uses a manual checking approach
-}
+Converts the topology into an undirected graph (two elements share an edge
+if they appear together in any open set) and checks graph connectivity via
+depth-first search.
 
-Created as part of research on economic cycle analysis.
-Check if a topology is connected using undirected graph approach
+\strong{Note:} This is a necessary but not sufficient condition for
+topological connectivity. For an exact check, use
+\code{\link{is_topology_connected_exact}}.
 }
 \examples{
-topology <- list(c(1,2,3), c(3,4,5))
+topology <- list(c(1, 2, 3), c(3, 4, 5))
 is_topology_connected(topology)
-}
-\author{
-José Mauricio Gómez Julián
 }

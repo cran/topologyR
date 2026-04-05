@@ -7,21 +7,26 @@
 calculate_thresholds(data)
 }
 \arguments{
-\item{data}{Numeric vector to calculate thresholds for}
+\item{data}{Numeric vector to calculate thresholds for.}
 }
 \value{
-A named \code{list} containing five threshold values:
+A named \code{list} with five threshold values:
 \describe{
-\item{mean_diff}{Numeric. Threshold based on mean of absolute differences
-between adjacent sorted values.}
-\item{median_diff}{Numeric. Threshold based on median of absolute differences
-between adjacent sorted values.}
-\item{sd}{Numeric. Threshold based on standard deviation of the data.}
-\item{iqr}{Numeric. Threshold based on IQR divided by 4.}
-\item{dbscan}{Numeric. Threshold based on DBSCAN-like density estimation
-using k-th nearest neighbor distance.}
+\item{mean_diff}{Mean of absolute differences between adjacent sorted values.}
+\item{median_diff}{Median of absolute differences between adjacent sorted values.}
+\item{sd}{Standard deviation of the data.}
+\item{iqr}{IQR divided by 4.}
+\item{dbscan}{k-th nearest neighbor distance (k = ceiling(log(n))).}
 }
 }
 \description{
-Calculate multiple threshold methods for topology analysis
+Computes five different threshold methods for defining neighborhoods
+in threshold-based topology construction.
+
+\strong{Note:} Threshold-based methods produce metric topologies, not
+the graph-induced topologies of Nada et al. (2018). See
+\code{\link{generate_topology}} for the theoretically faithful approach.
+}
+\examples{
+calculate_thresholds(rnorm(100))
 }

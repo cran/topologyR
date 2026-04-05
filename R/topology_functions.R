@@ -1,554 +1,454 @@
-#' @title Topology Analysis Functions for Time Series Data
-#' @description Functions for analyzing topological properties of time series data
-#' @author José Mauricio Gómez Julián
-#' @details
-#' This module provides three main functions for analyzing the connectivity
-#' of topological structures, particularly focused on economic time series:
-#' - is_topology_connected: Uses an undirected graph approach
-#' - is_topology_connected2: Uses a directed graph approach
-#' - is_topology_connected_manual: Uses a manual checking approach
-#'
-#' Created as part of research on economic cycle analysis.
-
 #' Check if a topology is connected using undirected graph approach
 #'
-#' @param topology A list of sets representing the topology
-#' @return \code{logical} scalar. Returns \code{TRUE} if the topology is 
-#'   connected (all elements can be reached from any starting point through 
-#'   the undirected graph representation), \code{FALSE} otherwise. Returns 
-#'   \code{FALSE} if the topology is empty.
+#' @description
+#' Converts the topology into an undirected graph (two elements share an edge
+#' if they appear together in any open set) and checks graph connectivity via
+#' depth-first search.
+#'
+#' \strong{Note:} This is a necessary but not sufficient condition for
+#' topological connectivity. For an exact check, use
+#' \code{\link{is_topology_connected_exact}}.
+#'
+#' @param topology A list of integer vectors representing the open sets.
+#' @return \code{logical} scalar. \code{TRUE} if the derived graph is connected,
+#'   \code{FALSE} otherwise or if the topology is empty.
 #' @examples
-#' topology <- list(c(1,2,3), c(3,4,5))
+#' topology <- list(c(1, 2, 3), c(3, 4, 5))
 #' is_topology_connected(topology)
 #' @export
 is_topology_connected <- function(topology) {
   if (!length(topology)) return(FALSE)
 
   elements <- unique(unlist(topology))
-  n <- max(elements)  # Changed from length(elements)
+  if (length(elements) <= 1L) return(TRUE)
 
-  # Create undirected graph from topology
-  edges <- matrix(0, nrow = n, ncol = n)
+  n <- max(elements)
+  edges <- matrix(0L, nrow = n, ncol = n)
   for (set in topology) {
     for (i in set) {
       for (j in set) {
-        if (i != j && i <= n && j <= n) {  # Added boundary check
-          edges[i, j] <- 1
-          edges[j, i] <- 1
+        if (i != j && i <= n && j <= n) {
+          edges[i, j] <- 1L
+          edges[j, i] <- 1L
         }
       }
     }
   }
 
-  # Perform DFS to check connectivity
   visited <- rep(FALSE, n)
-  stack <- c(elements[1])
-
-  while (length(stack) > 0) {
-    v <- stack[1]
-    stack <- stack[-1]
+  stack <- elements[1L]
+  while (length(stack) > 0L) {
+    v <- stack[1L]
+    stack <- stack[-1L]
     if (!visited[v]) {
       visited[v] <- TRUE
-      neighbors <- which(edges[v, ] == 1)
-      stack <- c(stack, elements[neighbors])
-    }
-  }
-
-  all(visited[elements])  # Only check elements that are present
-}
-
-#' Check if a topology is connected using directed graph approach
-#'
-#' @param topology A list of sets representing the topology
-#' @return \code{logical} scalar. Returns \code{TRUE} if the topology is 
-#'   connected through directed graph traversal (considering sequential 
-#'   connections between elements), \code{FALSE} otherwise. Returns 
-#'   \code{FALSE} if the topology is empty.
-#' @examples
-#' topology <- list(c(1,2,3), c(3,4,5))
-#' is_topology_connected2(topology)
-#' @export
-is_topology_connected2 <- function(topology) {
-  # Handle empty topology case
-  if (!length(topology)) return(FALSE)
-
-  # Get unique elements and determine matrix size
-  elements <- unique(unlist(topology))
-  n <- max(elements)
-
-  # Initialize adjacency matrix
-  edges <- matrix(0, nrow = n, ncol = n)
-
-  # Build directed edges
-  for (set in topology) {
-    if (length(set) > 1) {
-      # Get values in current set
-      values <- sort(set)
-      # Create edges between consecutive elements
-      for (i in 1:(length(values)-1)) {
-        current_val <- values[i]
-        next_val <- values[i+1]
-        edges[current_val, next_val] <- 1
-      }
-    }
-  }
-
-  # Initialize DFS variables
-  visited <- rep(FALSE, n)
-  start <- min(elements)
-  stack <- c(start)
-
-  # Perform DFS
-  while (length(stack) > 0) {
-    current <- stack[1]
-    stack <- stack[-1]
-
-    if (!visited[current]) {
-      visited[current] <- TRUE
-      # Find all unvisited neighbors
-      neighbors <- which(edges[current,] == 1)
+      neighbors <- which(edges[v, ] == 1L)
       stack <- c(stack, neighbors[!visited[neighbors]])
     }
   }
 
-  # Check if all elements in topology are visited
-  return(all(visited[elements]))
+  all(visited[elements])
 }
 
-#' Check if a topology is connected using manual checking approach
+
+#' Check if a topology is connected using directed graph approach
 #'
-#' @param topology A list of sets representing the topology
-#' @return \code{logical} scalar. Returns \code{TRUE} if all elements from 
-#'   1 to the maximum value in the topology are present in at least one set, 
-#'   \code{FALSE} otherwise.
+#' @description
+#' Converts the topology into a directed graph (sequential edges between
+#' sorted elements within each set) and checks reachability via DFS.
+#'
+#' \strong{Note:} This is a necessary but not sufficient condition for
+#' topological connectivity. For an exact check, use
+#' \code{\link{is_topology_connected_exact}}.
+#'
+#' @param topology A list of integer vectors representing the open sets.
+#' @return \code{logical} scalar. \code{TRUE} if all elements are reachable
+#'   from the minimum element via directed edges, \code{FALSE} otherwise.
 #' @examples
-#' topology <- list(c(1,2,3), c(3,4,5))
-#' is_topology_connected_manual(topology)
+#' topology <- list(c(1, 2, 3), c(3, 4, 5))
+#' is_topology_connected2(topology)
 #' @export
-is_topology_connected_manual <- function(topology) {
-  # Get all unique elements in the topology
-  all_elements <- unique(unlist(topology))
+is_topology_connected2 <- function(topology) {
+  if (!length(topology)) return(FALSE)
 
-  # Get elements from original set (assuming they go from 1 to n)
-  n <- max(all_elements)
-  original_elements <- 1:n
+  elements <- unique(unlist(topology))
+  if (length(elements) <= 1L) return(TRUE)
 
-  # Check if each element appears in at least one set
-  for (element in original_elements) {
-    if (!any(sapply(topology, function(set) element %in% set))) {
-      return(FALSE)
+  n <- max(elements)
+  edges <- matrix(0L, nrow = n, ncol = n)
+
+  for (set in topology) {
+    if (length(set) > 1L) {
+      values <- sort(set)
+      for (i in seq_len(length(values) - 1L)) {
+        edges[values[i], values[i + 1L]] <- 1L
+      }
     }
   }
 
-  return(TRUE)
+  visited <- rep(FALSE, n)
+  start <- min(elements)
+  stack <- start
+  while (length(stack) > 0L) {
+    current <- stack[1L]
+    stack <- stack[-1L]
+    if (!visited[current]) {
+      visited[current] <- TRUE
+      neighbors <- which(edges[current, ] == 1L)
+      stack <- c(stack, neighbors[!visited[neighbors]])
+    }
+  }
+
+  all(visited[elements])
 }
 
-#' Calculate topology characteristics for different IQR factors
+
+#' Check if all elements are covered by the topology
 #'
 #' @description
-#' This function analyzes how different IQR (Interquartile Range) factors affect
-#' the topology's characteristics. It helps users determine the optimal factor
-#' for their specific data by showing how the factor choice impacts the base size
-#' and set sizes in the resulting topology.
+#' Checks whether every integer from 1 to the maximum value in the topology
+#' appears in at least one open set. This verifies \strong{coverage}
+#' (\eqn{\bigcup \tau = X}), not topological connectivity.
 #'
-#' @param data Numeric vector containing the data to analyze
-#' @param factors Numeric vector of factors to test (default: c(1, 2, 4, 8, 16))
-#' @param plot Logical, whether to display a plot (default: TRUE)
-#' @return A \code{data.frame} with the following columns:
+#' \strong{Note:} A space can have full coverage and be maximally disconnected
+#' (e.g., the discrete topology). For connectivity, use
+#' \code{\link{is_topology_connected_exact}}.
+#'
+#' @param topology A list of integer vectors representing the open sets.
+#' @return \code{logical} scalar. \code{TRUE} if all elements from 1 to the
+#'   maximum are present in at least one set.
+#' @examples
+#' topology <- list(c(1, 2, 3), c(3, 4, 5))
+#' is_topology_connected_manual(topology)
+#' @export
+is_topology_connected_manual <- function(topology) {
+  all_elements <- unique(unlist(topology))
+  if (length(all_elements) == 0L) return(FALSE)
+  n <- max(all_elements)
+  all(seq_len(n) %in% all_elements)
+}
+
+
+#' Analyze topology characteristics for different IQR factors
+#'
+#' @description
+#' Analyzes how different IQR factors affect topology characteristics.
+#' Helps determine the optimal factor by showing how the factor choice
+#' impacts base size and set sizes.
+#'
+#' \strong{Note:} This function uses threshold-based neighborhoods (metric
+#' approximation), not the graph-theoretic approach of Nada et al. (2018).
+#' For the theoretically faithful approach, use visibility graphs with
+#' \code{\link{generate_topology}}.
+#'
+#' @param data Numeric vector containing the data to analyze.
+#' @param factors Numeric vector of factors to test
+#'   (default: \code{c(1, 2, 4, 8, 16)}).
+#' @param plot Logical, whether to return a plot object (default: \code{TRUE}).
+#' @return A \code{data.frame} with columns:
 #'   \describe{
-#'     \item{factor}{Numeric. The IQR factor used for threshold calculation.}
-#'     \item{threshold}{Numeric. The calculated threshold value (IQR/factor).}
-#'     \item{base_size}{Integer. Number of sets in the topological base.}
-#'     \item{max_set_size}{Integer. Size of the largest set in the base.}
-#'     \item{min_set_size}{Integer. Size of the smallest set in the base.}
+#'     \item{factor}{Numeric. The IQR factor used.}
+#'     \item{threshold}{Numeric. The calculated threshold (IQR/factor).}
+#'     \item{base_size}{Integer. Number of sets in the base.}
+#'     \item{max_set_size}{Integer. Size of the largest set.}
+#'     \item{min_set_size}{Integer. Size of the smallest set.}
 #'   }
-#'   If \code{plot = TRUE}, also generates a line plot showing the relationship
-#'   between IQR factors and base sizes as a side effect.
-#'
-#' @details
-#' The function works by:
-#' 1. Calculating different thresholds using IQR/factor
-#' 2. Creating a subbase using these thresholds
-#' 3. Generating the base from intersections of subbase elements
-#' 4. Analyzing the resulting topology's characteristics
-#'
-#' A larger factor results in a smaller threshold, which typically leads to
-#' a finer topology with more distinct sets but smaller set sizes.
+#'   If \code{plot = TRUE}, the data.frame carries an attribute \code{"plot"}
+#'   containing a \code{ggplot} object.
 #'
 #' @examples
-#' # Generate sample data
-#' data <- rnorm(100)
-#'
-#' # Analyze topology with default factors
+#' data <- rnorm(50)
 #' results <- analyze_topology_factors(data)
 #' print(results)
 #'
-#' # Use custom factors
-#' custom_results <- analyze_topology_factors(data, factors = c(2, 4, 6))
-#' print(custom_results)
-#'
 #' @export
 analyze_topology_factors <- function(data, factors = NULL, plot = TRUE) {
-  # Set default factors if not provided
+  if (!is.numeric(data) || length(data) < 2L) {
+    stop("'data' must be a numeric vector with at least 2 elements.",
+         call. = FALSE)
+  }
+  if (anyNA(data)) {
+    stop("'data' must not contain NA values.", call. = FALSE)
+  }
   if (is.null(factors)) {
     factors <- c(1, 2, 4, 8, 16)
   }
 
-  # Inner function to calculate topology for a single factor
   calculate_topology_with_factor <- function(data, factor) {
     threshold <- stats::IQR(data) / factor
     n <- length(data)
-
-    # Calculate subbase using threshold
-    subbase <- lapply(1:n, function(i) {
+    subbase <- lapply(seq_len(n), function(i) {
       which(abs(data - data[i]) <= threshold)
     })
-
-    # Generate base (including empty set and full set)
-    base <- list(integer(0), 1:n)
-    for (i in 1:n) {
-      for (j in i:n) {
-        intersection <- intersect(subbase[[i]], subbase[[j]])
-        if (length(intersection) > 0) {
-          base <- c(base, list(intersection))
+    base <- list(integer(0), seq_len(n))
+    for (i in seq_len(n)) {
+      for (j in seq(i, n)) {
+        inter <- intersect(subbase[[i]], subbase[[j]])
+        if (length(inter) > 0L) {
+          base <- c(base, list(inter))
         }
       }
     }
     unique(base)
   }
 
-  # Calculate results for each factor
   results <- lapply(factors, function(f) {
-    topology <- calculate_topology_with_factor(data, f)
+    topo <- calculate_topology_with_factor(data, f)
+    sizes <- vapply(topo, length, integer(1))
     list(
       factor = f,
       threshold = stats::IQR(data) / f,
-      base_size = length(topology),
-      max_set_size = max(sapply(topology, length)),
-      min_set_size = min(sapply(topology, length))
+      base_size = length(topo),
+      max_set_size = max(sizes),
+      min_set_size = min(sizes)
     )
   })
 
-  # Convert results to data frame
   results_df <- do.call(rbind, lapply(results, data.frame))
 
-  # Optional plotting
   if (plot) {
     p <- ggplot2::ggplot(results_df, ggplot2::aes(x = factor)) +
       ggplot2::geom_line(ggplot2::aes(y = base_size, color = "Base Size")) +
-      ggplot2::geom_line(ggplot2::aes(y = max_set_size, color = "Maximum Set Size")) +
-      ggplot2::geom_line(ggplot2::aes(y = min_set_size, color = "Minimum Set Size")) +
+      ggplot2::geom_line(ggplot2::aes(y = max_set_size,
+                                      color = "Maximum Set Size")) +
+      ggplot2::geom_line(ggplot2::aes(y = min_set_size,
+                                      color = "Minimum Set Size")) +
       ggplot2::scale_x_log10() +
       ggplot2::labs(title = "Effect of IQR Factor on Topology",
-           x = "IQR Factor", y = "Size") +
+                    x = "IQR Factor", y = "Size") +
       ggplot2::theme_minimal()
-
-    # Print the plot
-    print(p)
+    attr(results_df, "plot") <- p
   }
 
-  # Return the results data frame
-  return(results_df)
+  results_df
 }
+
 
 #' Calculate multiple threshold methods for topology analysis
 #'
-#' @param data Numeric vector to calculate thresholds for
-#' @return A named \code{list} containing five threshold values:
+#' @description
+#' Computes five different threshold methods for defining neighborhoods
+#' in threshold-based topology construction.
+#'
+#' \strong{Note:} Threshold-based methods produce metric topologies, not
+#' the graph-induced topologies of Nada et al. (2018). See
+#' \code{\link{generate_topology}} for the theoretically faithful approach.
+#'
+#' @param data Numeric vector to calculate thresholds for.
+#' @return A named \code{list} with five threshold values:
 #'   \describe{
-#'     \item{mean_diff}{Numeric. Threshold based on mean of absolute differences 
-#'       between adjacent sorted values.}
-#'     \item{median_diff}{Numeric. Threshold based on median of absolute differences 
-#'       between adjacent sorted values.}
-#'     \item{sd}{Numeric. Threshold based on standard deviation of the data.}
-#'     \item{iqr}{Numeric. Threshold based on IQR divided by 4.}
-#'     \item{dbscan}{Numeric. Threshold based on DBSCAN-like density estimation 
-#'       using k-th nearest neighbor distance.}
+#'     \item{mean_diff}{Mean of absolute differences between adjacent sorted values.}
+#'     \item{median_diff}{Median of absolute differences between adjacent sorted values.}
+#'     \item{sd}{Standard deviation of the data.}
+#'     \item{iqr}{IQR divided by 4.}
+#'     \item{dbscan}{k-th nearest neighbor distance (k = ceiling(log(n))).}
 #'   }
+#' @examples
+#' calculate_thresholds(rnorm(100))
 #' @export
 calculate_thresholds <- function(data) {
+  if (!is.numeric(data) || length(data) < 2L) {
+    stop("'data' must be a numeric vector with at least 2 elements.",
+         call. = FALSE)
+  }
+  if (anyNA(data)) {
+    stop("'data' must not contain NA values.", call. = FALSE)
+  }
+  sorted_data <- sort(data)
+  diffs <- abs(diff(sorted_data))
+  k <- ceiling(log(length(data)))
+  dist_sorted <- sort(as.numeric(stats::dist(matrix(data, ncol = 1))))
+
   list(
-    mean_diff = mean(abs(diff(sort(data)))),
-    median_diff = stats::median(abs(diff(sort(data)))),
+    mean_diff = mean(diffs),
+    median_diff = stats::median(diffs),
     sd = stats::sd(data),
     iqr = stats::IQR(data) / 4,
-    dbscan = {
-      k <- ceiling(log(length(data)))
-      sort(stats::dist(matrix(data, ncol=1)))[k * length(data)]
-    }
+    dbscan = dist_sorted[min(k * length(data), length(dist_sorted))]
   )
 }
 
+
 #' Calculate topology base size for a given threshold
 #'
-#' @param data Numeric vector to analyze
-#' @param threshold Numeric value for the threshold parameter
-#' @return \code{integer} scalar. The number of sets in the topological base. 
-#'   This value represents the complexity of the topology - larger values 
-#'   indicate more complex topological structure.
+#' @param data Numeric vector to analyze.
+#' @param threshold Numeric value for the threshold parameter. Must be
+#'   non-negative.
+#' @return \code{integer} scalar. The number of sets in the topological base.
+#' @examples
+#' calculate_topology(rnorm(30), threshold = 0.5)
 #' @export
 calculate_topology <- function(data, threshold) {
+  if (!is.numeric(data) || length(data) < 2L) {
+    stop("'data' must be a numeric vector with at least 2 elements.",
+         call. = FALSE)
+  }
+  if (!is.numeric(threshold) || length(threshold) != 1L || threshold < 0) {
+    stop("'threshold' must be a single non-negative number.", call. = FALSE)
+  }
   n <- length(data)
-  subbase <- lapply(1:n, function(i) {
+  subbase <- lapply(seq_len(n), function(i) {
     which(abs(data - data[i]) <= threshold)
   })
 
-  base <- list(integer(0), 1:n)
-  for (i in 1:n) {
-    for (j in i:n) {
-      intersection <- intersect(subbase[[i]], subbase[[j]])
-      if (length(intersection) > 0) {
-        base <- c(base, list(intersection))
+  base <- list(integer(0), seq_len(n))
+  for (i in seq_len(n)) {
+    for (j in seq(i, n)) {
+      inter <- intersect(subbase[[i]], subbase[[j]])
+      if (length(inter) > 0L) {
+        base <- c(base, list(inter))
       }
     }
   }
   base <- unique(base)
-
-  length(base)  # Returns the base size as a complexity measure
+  length(base)
 }
 
-#' Visualize Topology Thresholds
+
+#' Visualize and compare different threshold methods
 #'
-#' @title Visualize and Compare Different Threshold Methods
-#' @description This function creates a comprehensive visualization of different
-#'   threshold methods used in topology analysis. It generates three distinct plots
-#'   to help understand the relationships between different threshold methods and
-#'   their effects on topological structure.
-#'
-#' @param data Numeric vector to analyze
-#' @param plot Logical indicating whether to display plots (default: TRUE)
-#' @return A \code{data.frame} with one row per threshold method containing:
-#'   \describe{
-#'     \item{method}{Character. Name of the threshold calculation method.}
-#'     \item{threshold}{Numeric. The calculated threshold value.}
-#'     \item{base_size}{Integer. Number of sets in the resulting topological base.}
-#'   }
-#'   If \code{plot = TRUE}, generates three plots as side effects:
-#'   (1) Bar chart comparing threshold values by method,
-#'   (2) Bar chart comparing base sizes by method,
-#'   (3) Scatter plot showing threshold vs base size relationship.
+#' @param data Numeric vector to analyze.
+#' @param plot Logical indicating whether to return plot objects
+#'   (default: \code{TRUE}).
+#' @return A \code{data.frame} with columns \code{method}, \code{threshold},
+#'   and \code{base_size}. If \code{plot = TRUE}, carries an attribute
+#'   \code{"plots"} containing a list of three \code{ggplot} objects.
 #' @importFrom ggplot2 ggplot aes geom_bar geom_point geom_text theme_minimal labs
-#'
 #' @examples
 #' \donttest{
-#' # Generate sample data
-#' data <- rnorm(100)
-#'
-#' # Visualize threshold comparisons
+#' data <- rnorm(50)
 #' results <- visualize_topology_thresholds(data)
 #' }
 #' @export
 visualize_topology_thresholds <- function(data, plot = TRUE) {
+  if (!is.numeric(data) || length(data) < 2L) {
+    stop("'data' must be a numeric vector with at least 2 elements.",
+         call. = FALSE)
+  }
+  if (anyNA(data)) {
+    stop("'data' must not contain NA values.", call. = FALSE)
+  }
 
-  # Calculate thresholds
   thresholds <- calculate_thresholds(data)
+  base_sizes <- vapply(thresholds, function(t) calculate_topology(data, t),
+                        integer(1))
 
-  # Calculate base sizes (using the existing calculate_topology function)
-  base_sizes <- sapply(thresholds, function(t) calculate_topology(data, t))
-
-  # Create data frame
   df <- data.frame(
     method = names(thresholds),
     threshold = unlist(thresholds),
-    base_size = base_sizes
+    base_size = base_sizes,
+    stringsAsFactors = FALSE
   )
 
   if (plot) {
-    # Threshold comparison plot
     p1 <- ggplot2::ggplot(df, ggplot2::aes(x = method, y = threshold)) +
       ggplot2::geom_bar(stat = "identity") +
       ggplot2::theme_minimal() +
       ggplot2::labs(title = "Threshold comparison by method",
-           x = "Method", y = "Threshold")
+                    x = "Method", y = "Threshold")
 
-    # Base size comparison plot
     p2 <- ggplot2::ggplot(df, ggplot2::aes(x = method, y = base_size)) +
       ggplot2::geom_bar(stat = "identity") +
       ggplot2::theme_minimal() +
       ggplot2::labs(title = "Base size comparison by method",
-           x = "Method", y = "Base size")
+                    x = "Method", y = "Base size")
 
-    # Threshold vs base size plot
-    p3 <- ggplot2::ggplot(df, ggplot2::aes(x = threshold, y = base_size, label = method)) +
+    p3 <- ggplot2::ggplot(df, ggplot2::aes(x = threshold, y = base_size,
+                                            label = method)) +
       ggplot2::geom_point() +
       ggplot2::geom_text(hjust = -0.1, vjust = 0) +
       ggplot2::theme_minimal() +
       ggplot2::labs(title = "Relationship between threshold and base size",
-           x = "Threshold", y = "Base size")
+                    x = "Threshold", y = "Base size")
 
-    # Print plots
-    print(p1)
-    print(p2)
-    print(p3)
+    attr(df, "plots") <- list(threshold = p1, base_size = p2, scatter = p3)
   }
 
-  # Return data frame for further analysis
-  return(df)
+  df
 }
 
-#' Create a topology with completely disconnected sets
+
+#' Create the discrete topology (completely disconnected)
 #'
 #' @description
-#' This function generates a topology where each set in the topology
-#' is a singleton (contains only one element), resulting in a completely
-#' disconnected topological structure. Each vertex exists in isolation,
-#' with no meaningful connections between sets.
+#' Generates the discrete topology on \code{n} elements, where the base
+#' consists of all singleton sets \eqn{\{\{1\}, \{2\}, \ldots, \{n\}\}}.
+#' The full topology is the power set \eqn{2^V}, but only the base is
+#' returned explicitly (enumerating \eqn{2^n} sets is impractical for
+#' large \code{n}).
 #'
-#' @details
-#' The subbase contains individual elements. The base consists of singleton sets.
-#' The topology is formed by these singleton sets. No meaningful topological 
-#' relationships are established between elements.
-#'
-#' @param datos Numeric vector containing the data points to analyze
-#' @return A \code{list} with four components:
+#' @param data Numeric vector containing the data points.
+#' @return A \code{list} with:
 #'   \describe{
-#'     \item{R}{List. The equivalence relation defined on the data vertices.}
-#'     \item{subbase}{List. Sets of individual vertices forming the subbase.}
-#'     \item{base}{List. Singleton sets forming the base of the topology.}
-#'     \item{topology}{List. The complete topology consisting of disconnected singleton sets.}
+#'     \item{subbase}{List of singleton sets.}
+#'     \item{base}{Same as subbase (singletons are already a base).}
+#'     \item{topology_type}{Character: \code{"discrete"}.}
+#'     \item{n}{Integer. Number of elements.}
+#'     \item{connected}{Logical. Always \code{FALSE} for \eqn{n \geq 2}
+#'       (the discrete topology is maximally disconnected).}
 #'   }
 #' @examples
-#' data <- c(1, 2, 3, 4, 5)
-#' result <- simplest_topology(data)
+#' result <- simplest_topology(c(1, 2, 3, 4, 5))
+#' result$connected
 #' @export
-simplest_topology <- function(datos) {
-  # Step 1: Get number of vertices
-  n <- length(datos)
-  # Step 2: Create complete graph from data
-  vertices <- seq_len(n)
-  adj_matrix <- matrix(1, nrow = n, ncol = n)
-  diag(adj_matrix) <- 0
-  # Step 3: Assign data values as edge weights
-  for (i in 1:n) {
-    for (j in 1:n) {
-      if (i != j) {
-        adj_matrix[i, j] <- abs(datos[i] - datos[j])
-      }
-    }
+simplest_topology <- function(data) {
+  if (!is.numeric(data) || length(data) < 1L) {
+    stop("'data' must be a numeric vector with at least 1 element.",
+         call. = FALSE)
   }
-  # Step 4: Calculate vertex degrees
-  degree <- rowSums(adj_matrix > 0, na.rm = TRUE)
-  # Step 5: Define relation R and classes
-  R <- list()
-  class <- list()
-  for (i in 1:n) {
-    for (j in 1:n) {
-      if (degree[i] != 0) {
-        class[[paste(i, j)]] <- vertices[j]
-        R[[paste(vertices[i], vertices[j])]] <- list(x = paste0(degree[i], "_", datos[i]),
-                                                     y = paste0(degree[j], "_", datos[j]))
-      }
-    }
-  }
-  # Step 6: Get subbase
-  subbase <- list()
-  for (i in 1:n) {
-    for (j in 1:n) {
-      if (!is.null(class[[paste(i, j)]])) {
-        subbase <- append(subbase, class[[paste(i, j)]])
-      }
-    }
-  }
-  subbase <- unique(subbase)
-  # Step 7: Get base
-  base <- subbase
-  for (vi in vertices) {
-    for (vj in vertices) {
-      base <- append(base, intersect(vi, vj))
-    }
-  }
-  base <- unique(base)
-  # Step 8: Get topology
-  topology <- base
-  for (vi in vertices) {
-    for (vj in vertices) {
-      union_set <- union(vi, vj)
-      if (length(union_set) > 0) {
-        topology <- append(topology, union_set)
-      }
-    }
-  }
-  topology <- unique(topology)
+  n <- length(data)
+  singletons <- lapply(seq_len(n), function(i) i)
 
-  list(R = R, subbase = subbase, base = base, topology = topology)
+  list(
+    subbase = singletons,
+    base = singletons,
+    topology_type = "discrete",
+    n = n,
+    connected = n <= 1L
+  )
 }
 
-#' Create a complete topology from data points with neighborhood structure
-#'
-#' @param datos Numeric vector containing the data points to analyze
-#' @return A \code{list} with four components:
-#'   \describe{
-#'     \item{R}{List. The equivalence relation defined on the data, where each
-#'       element represents a relationship between vertices based on their degrees
-#'       and values.}
-#'     \item{subbase}{List. The neighborhoods of each vertex, where each element
-#'       contains the indices of neighboring vertices in the graph.}
-#'     \item{base}{List. The base generated from intersections of neighborhoods,
-#'       including the empty set, full set, and all non-empty intersections.}
-#'     \item{topology}{List. The complete topology generated by taking unions of 
-#'       base elements, satisfying the axioms of topological spaces.}
-#'   }
-#' @examples
-#' data <- c(1, 2, 3, 4, 5)
-#' result <- complete_topology(data)
-#' @export
-complete_topology <- function(datos) {
-  # Step 1: Get number of vertices
-  n <- length(datos)
-  # Step 2: Create complete graph from data
-  vertices <- seq_len(n)
-  adj_matrix <- matrix(1, nrow = n, ncol = n)
-  diag(adj_matrix) <- 0
-  # Step 3: Assign data values as edge weights
-  for (i in 1:n) {
-    for (j in 1:n) {
-      if (i != j) {
-        adj_matrix[i, j] <- abs(datos[i] - datos[j])
-      }
-    }
-  }
-  # Step 4: Calculate vertex degrees
-  degree <- rowSums(adj_matrix > 0, na.rm = TRUE)
-  # Step 5: Define relation R and classes
-  R <- list()
-  class <- list()
-  for (i in 1:n) {
-    for (j in 1:n) {
-      if (degree[i] != 0) {
-        class[[paste(i, j)]] <- vertices[j]
-        R[[paste(vertices[i], vertices[j])]] <- list(x = paste0(degree[i], "_", datos[i]),
-                                                     y = paste0(degree[j], "_", datos[j]))
-      }
-    }
-  }
-  # Step 6: Get subbase (neighborhoods of each vertex)
-  subbase <- list()
-  for (i in 1:n) {
-    neighbors <- which(adj_matrix[i, ] > 0)
-    subbase[[i]] <- vertices[neighbors]
-  }
-  # Step 7: Get base
-  base <- list(integer(0), vertices)
-  for (i in 1:n) {
-    for (j in i:n) {
-      intersection <- intersect(subbase[[i]], subbase[[j]])
-      if (length(intersection) > 0) {
-        base <- append(base, list(intersection))
-      }
-    }
-  }
-  base <- unique(base)
-  # Step 8: Get topology
-  topology <- base
-  for (i in 1:length(base)) {
-    for (j in i:length(base)) {
-      union_set <- union(base[[i]], base[[j]])
-      if (length(union_set) > 0) {
-        topology <- append(topology, list(union_set))
-      }
-    }
-  }
-  topology <- unique(topology)
 
-  list(R = R, subbase = subbase, base = base, topology = topology)
+#' Create a complete-graph topology from data
+#'
+#' @description
+#' Constructs a topology from the complete graph on the data points.
+#' In the complete graph, every vertex is a neighbor of every other vertex,
+#' so each neighborhood is \eqn{N(v) = V \setminus \{v\}}. The resulting
+#' topology is generated using the fixed-point closure algorithm.
+#'
+#' \strong{Note:} The complete graph produces trivial neighborhoods
+#' (all vertices except self). For meaningful topological structure,
+#' use visibility graphs with \code{\link{generate_topology}}.
+#'
+#' @param data Numeric vector containing the data points. Length must be
+#'   between 2 and 64.
+#' @param verify_axioms Logical. Whether to verify topology axioms
+#'   (default: \code{FALSE}).
+#' @return A \code{list} with the same structure as \code{\link{generate_topology}}.
+#' @examples
+#' result <- complete_topology(c(1, 2, 3, 4, 5))
+#' result$n_open_sets
+#' result$connected
+#' @export
+complete_topology <- function(data, verify_axioms = FALSE) {
+  if (!is.numeric(data) || length(data) < 2L) {
+    stop("'data' must be a numeric vector with at least 2 elements.",
+         call. = FALSE)
+  }
+  if (anyNA(data)) {
+    stop("'data' must not contain NA values.", call. = FALSE)
+  }
+  n <- length(data)
+
+  vertices <- seq_len(n)
+  # Complete graph: each vertex neighbors all others
+  adjacency <- lapply(vertices, function(v) setdiff(vertices, v))
+
+  generate_topology(
+    adjacency = adjacency,
+    n_elements = n,
+    check_connected = TRUE,
+    verify_axioms = verify_axioms
+  )
 }

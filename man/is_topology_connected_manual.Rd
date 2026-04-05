@@ -2,22 +2,27 @@
 % Please edit documentation in R/topology_functions.R
 \name{is_topology_connected_manual}
 \alias{is_topology_connected_manual}
-\title{Check if a topology is connected using manual checking approach}
+\title{Check if all elements are covered by the topology}
 \usage{
 is_topology_connected_manual(topology)
 }
 \arguments{
-\item{topology}{A list of sets representing the topology}
+\item{topology}{A list of integer vectors representing the open sets.}
 }
 \value{
-\code{logical} scalar. Returns \code{TRUE} if all elements from
-1 to the maximum value in the topology are present in at least one set,
-\code{FALSE} otherwise.
+\code{logical} scalar. \code{TRUE} if all elements from 1 to the
+maximum are present in at least one set.
 }
 \description{
-Check if a topology is connected using manual checking approach
+Checks whether every integer from 1 to the maximum value in the topology
+appears in at least one open set. This verifies \strong{coverage}
+(\eqn{\bigcup \tau = X}), not topological connectivity.
+
+\strong{Note:} A space can have full coverage and be maximally disconnected
+(e.g., the discrete topology). For connectivity, use
+\code{\link{is_topology_connected_exact}}.
 }
 \examples{
-topology <- list(c(1,2,3), c(3,4,5))
+topology <- list(c(1, 2, 3), c(3, 4, 5))
 is_topology_connected_manual(topology)
 }

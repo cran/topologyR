@@ -2,34 +2,32 @@
 % Please edit documentation in R/topology_functions.R
 \name{simplest_topology}
 \alias{simplest_topology}
-\title{Create a topology with completely disconnected sets}
+\title{Create the discrete topology (completely disconnected)}
 \usage{
-simplest_topology(datos)
+simplest_topology(data)
 }
 \arguments{
-\item{datos}{Numeric vector containing the data points to analyze}
+\item{data}{Numeric vector containing the data points.}
 }
 \value{
-A \code{list} with four components:
+A \code{list} with:
 \describe{
-\item{R}{List. The equivalence relation defined on the data vertices.}
-\item{subbase}{List. Sets of individual vertices forming the subbase.}
-\item{base}{List. Singleton sets forming the base of the topology.}
-\item{topology}{List. The complete topology consisting of disconnected singleton sets.}
+\item{subbase}{List of singleton sets.}
+\item{base}{Same as subbase (singletons are already a base).}
+\item{topology_type}{Character: \code{"discrete"}.}
+\item{n}{Integer. Number of elements.}
+\item{connected}{Logical. Always \code{FALSE} for \eqn{n \geq 2}
+(the discrete topology is maximally disconnected).}
 }
 }
 \description{
-This function generates a topology where each set in the topology
-is a singleton (contains only one element), resulting in a completely
-disconnected topological structure. Each vertex exists in isolation,
-with no meaningful connections between sets.
-}
-\details{
-The subbase contains individual elements. The base consists of singleton sets.
-The topology is formed by these singleton sets. No meaningful topological
-relationships are established between elements.
+Generates the discrete topology on \code{n} elements, where the base
+consists of all singleton sets \eqn{\{\{1\}, \{2\}, \ldots, \{n\}\}}.
+The full topology is the power set \eqn{2^V}, but only the base is
+returned explicitly (enumerating \eqn{2^n} sets is impractical for
+large \code{n}).
 }
 \examples{
-data <- c(1, 2, 3, 4, 5)
-result <- simplest_topology(data)
+result <- simplest_topology(c(1, 2, 3, 4, 5))
+result$connected
 }

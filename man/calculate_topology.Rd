@@ -7,15 +7,17 @@
 calculate_topology(data, threshold)
 }
 \arguments{
-\item{data}{Numeric vector to analyze}
+\item{data}{Numeric vector to analyze.}
 
-\item{threshold}{Numeric value for the threshold parameter}
+\item{threshold}{Numeric value for the threshold parameter. Must be
+non-negative.}
 }
 \value{
 \code{integer} scalar. The number of sets in the topological base.
-This value represents the complexity of the topology - larger values
-indicate more complex topological structure.
 }
 \description{
 Calculate topology base size for a given threshold
+}
+\examples{
+calculate_topology(rnorm(30), threshold = 0.5)
 }
